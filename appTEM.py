@@ -9,7 +9,6 @@ from scipy.constants import convert_temperature
 st.set_page_config(layout="wide", page_title="Simulador de Termodinámica")
 
 # Constantes de Termodinámica (Valores de referencia, J/kg·K o J/kg)
-# Nota: La constante 4.186 J/cal (Equivalente mecánico del calor) se encuentra en el documento.
 CONSTANTES = {
     "Agua": {
         "ce_liquido": 4186,  # Calor específico líquido (J/kg·K)
@@ -93,9 +92,13 @@ def seccion_conversor():
                 st.metric(f"{escala} (°{escala})", f"{conversiones[escala]:.2f}")
 
     st.info("""
-    **Explicación Física:** Las escalas Kelvin y Rankine son **escalas absolutas** (0 K y 0 R representan el cero absoluto, donde no hay movimiento molecular), mientras que Celsius y Fahrenheit se basan en puntos de referencia del agua. El Cero Absoluto es $0 K \approx -273.15 °C$[cite: 1118].
+    **Explicación Física:** Las escalas Kelvin y Rankine son **escalas absolutas** (0 K y 0 R representan el cero absoluto, donde no hay movimiento molecular), mientras que Celsius y Fahrenheit se basan en puntos de referencia del agua. El Cero Absoluto es $0 K \approx -273.15 °C$.
     """)
     # 
+
+[Image of Temperature scales comparison showing Celsius, Kelvin, Fahrenheit, and Rankine scales]
+
+
 # 3.2. Simulación de Equilibrio Térmico
 def seccion_equilibrio_termico():
     st.header("2️⃣ Equilibrio Térmico y Calores Específicos")
@@ -155,9 +158,7 @@ def seccion_equilibrio_termico():
 
     # Visualización con Plotly (Gráfico de barras de calor)
     etiquetas = [f"Cuerpo 1 ({ce1_key})", f"Cuerpo 2 ({ce2_key})"]
-    temperaturas = [T1, T2, Tf, Tf]
-    colores = ['red', 'blue', 'gray', 'gray']
-
+    
     fig = go.Figure(data=[
         go.Bar(name='Temperatura Inicial', x=etiquetas, y=[T1, T2], marker_color=['red', 'blue']),
         go.Scatter(name='Temperatura Final', x=etiquetas, y=[Tf, Tf], mode='lines+markers', line=dict(color='black', dash='dash', width=2))
@@ -173,6 +174,7 @@ def seccion_equilibrio_termico():
     **Explicación Física:** El principio se basa en la **Conservación de la Energía**: en un sistema aislado, el calor total perdido por los cuerpos calientes es igual al calor total ganado por los cuerpos fríos ($\Sigma Q = 0$). La temperatura de equilibrio es el promedio ponderado por la capacidad calorífica ($m \cdot c_e$) de cada cuerpo.
     """)
     # 
+
 # 3.3. Procesos Térmicos y Cambios de Fase
 def seccion_cambio_fase():
     st.header("3️⃣ Procesos con Cambio de Fase (Agua)")
@@ -201,60 +203,69 @@ def seccion_cambio_fase():
     # Inicializar calor total y lista de etapas
     Q_total = 0.0
     etapas_q = []
-    etapas_t = [T_inicial]
+    T_puntos = [T_inicial]
+    Q_acumulado = [0.0]
 
     def add_calor(m, ce, delta_T, nombre_etapa, T_act):
         Q = m * ce * delta_T
+        Q_total_new = Q_acumulado[-1] + Q
         etapas_q.append((nombre_etapa, Q))
-        etapas_t.append(T_act + delta_T)
+        T_puntos.append(T_act + delta_T)
+        Q_acumulado.append(Q_total_new)
         return Q
 
     def add_calor_fase(m, L, nombre_fase, T_fase):
         Q = m * L
+        Q_total_new = Q_acumulado[-1] + Q
         etapas_q.append((nombre_fase, Q))
-        etapas_t.append(T_fase)
+        T_puntos.append(T_fase)
+        Q_acumulado.append(Q_total_new)
         return Q
 
     T_actual = T_inicial
 
-    # Asegurarse de que T_inicial < T_final para un proceso de calentamiento/fusión/ebullición (Q>0)
+    # Algoritmo de Calentamiento (T_inicial < T_final)
     if T_inicial < T_final: 
+        
         # Etapa 1: Calentamiento de Sólido (Hielo)
         if T_actual < Tf_C:
             T_target = min(T_final, Tf_C)
-            Q_total += add_calor(m_agua, C["ce_solido"], T_target - T_actual, 
-                                f"1. Calentamiento Sólido: $T={T_actual:.0f}\\to{T_target:.0f} \\ °C$", T_actual)
+            add_calor(m_agua, C["ce_solido"], T_target - T_actual, 
+                      f"1. Calentamiento Sólido: $T={T_actual:.0f}\\to{T_target:.0f} \\ °C$", T_actual)
             T_actual = T_target
             
         # Etapa 2: Fusión (si se alcanza 0°C y se sigue calentando)
         if T_actual == Tf_C and T_final > Tf_C:
-            Q_total += add_calor_fase(m_agua, C["Lf"], f"2. Fusión (Cambio de Fase): $T={Tf_C:.0f} \\ °C$", Tf_C)
-            T_actual = Tf_C
+            add_calor_fase(m_agua, C["Lf"], f"2. Fusión (Cambio de Fase): $T={Tf_C:.0f} \\ °C$", Tf_C)
+            
+        T_actual = T_puntos[-1] # Actualizar T_actual después de posible fusión
         
         # Etapa 3: Calentamiento de Líquido (Agua)
         if T_actual < Tv_C:
             T_target = min(T_final, Tv_C)
-            Q_total += add_calor(m_agua, C["ce_liquido"], T_target - T_actual, 
-                                f"3. Calentamiento Líquido: $T={T_actual:.0f}\\to{T_target:.0f} \\ °C$", T_actual)
+            add_calor(m_agua, C["ce_liquido"], T_target - T_actual, 
+                      f"3. Calentamiento Líquido: $T={T_actual:.0f}\\to{T_target:.0f} \\ °C$", T_actual)
             T_actual = T_target
 
         # Etapa 4: Vaporización (si se alcanza 100°C y se sigue calentando)
         if T_actual == Tv_C and T_final > Tv_C:
-            Q_total += add_calor_fase(m_agua, C["Lv"], f"4. Vaporización (Cambio de Fase): $T={Tv_C:.0f} \\ °C$", Tv_C)
-            T_actual = Tv_C
+            add_calor_fase(m_agua, C["Lv"], f"4. Vaporización (Cambio de Fase): $T={Tv_C:.0f} \\ °C$", Tv_C)
+            
+        T_actual = T_puntos[-1] # Actualizar T_actual después de posible vaporización
 
         # Etapa 5: Calentamiento de Gas (Vapor)
         if T_actual < T_final:
-            Q_total += add_calor(m_agua, C["ce_gas"], T_final - T_actual, 
-                                f"5. Calentamiento Vapor: $T={T_actual:.0f}\\to{T_final:.0f} \\ °C$", T_actual)
+            add_calor(m_agua, C["ce_gas"], T_final - T_actual, 
+                      f"5. Calentamiento Vapor: $T={T_actual:.0f}\\to{T_final:.0f} \\ °C$", T_actual)
 
-    # Si T_inicial > T_final, el proceso es inverso (enfriamiento, condensación, solidificación)
+    # Nota: Si T_inicial > T_final, el proceso es inverso (enfriamiento).
     else:
         st.error("Para esta simulación, por favor configure $T_i < T_f$. La simulación de enfriamiento es similar pero con $Q < 0$ y usando los calores latentes negativos.")
         return
 
 
     # 6. Mostrar Resultados
+    Q_total = Q_acumulado[-1]
     st.metric("Calor Total Requerido $Q_{total}$ (Joule)", f"{Q_total:,.0f}")
 
     st.subheader("Detalle del Proceso por Etapas:")
@@ -267,9 +278,6 @@ def seccion_cambio_fase():
         st.markdown("No se requirió calor, o la diferencia de temperatura fue demasiado pequeña.")
 
     # Gráfico de la Curva de Calentamiento (Heat Curve)
-    T_puntos = [t for t in etapas_t if T_inicial <= t <= T_final or T_final <= t <= T_inicial]
-    Q_acumulado = [0] + list(np.cumsum([Q for _, Q in etapas_q]))
-
     fig = go.Figure(data=[
         go.Scatter(x=Q_acumulado, y=T_puntos, mode='lines+markers', name='Curva de Calentamiento',
                    line=dict(color='orange', width=3))
@@ -285,6 +293,7 @@ def seccion_cambio_fase():
     **Explicación Física:** El calor se usa para dos fines: **aumentar la temperatura** ($Q=mc_e\Delta T$) o **cambiar la fase** ($Q=mL$). Los tramos horizontales en la curva representan los cambios de fase (fusión a $0 °C$ y ebullición a $100 °C$) donde el calor latente ($L$) se absorbe sin cambiar la temperatura.
     """)
     # 
+
 # 3.4. Simulación de Conducción de Calor 1D (Barra)
 def seccion_conduccion_1d():
     st.header("4️⃣ Conducción de Calor en Barra (1D)")
@@ -339,7 +348,6 @@ def seccion_conduccion_1d():
         dx = L / Nx
         # Usamos la difusividad térmica alpha (k / (rho * ce))
         # Para el propósito de visualización, usamos un valor de alpha representativo
-        # Asumiremos alpha_sim = 1e-4 para una dinámica visible
         alpha_sim = 1e-4 
         dt = 0.5 * dx**2 / (2 * alpha_sim) # Criterio de estabilidad
         
@@ -395,20 +403,21 @@ def seccion_conduccion_1d():
         fig.update_layout(height=400)
         st.plotly_chart(fig, use_container_width=True)
 
-
-    st.info(f"""
-    **Explicación Física:** La **conducción** es la transferencia de energía por contacto directo y colisiones moleculares. Se rige por la **Ley de Fourier**: $P = -k A \\frac{dT}{dx}$, donde $k$ es la conductividad térmica.
+    # USANDO RAW F-STRING (fr"""...""") para evitar el SyntaxError con LaTeX
+    st.info(fr"""
+    **Explicación Física:** La **conducción** es la transferencia de energía por contacto directo y colisiones moleculares. Se rige por la **Ley de Fourier**: $P = -k A \frac{{dT}}{{dx}}$, donde $k$ es la conductividad térmica.
     * **Estado Estacionario:** El perfil de temperatura es **lineal** porque la transferencia de calor es constante en cada sección.
-    * **Evolución Temporal:** La temperatura evoluciona según la **Ecuación de Difusión de Calor** $\\frac{\\partial T}{\\partial t} = \\alpha \\frac{\\partial^2 T}{\\partial x^2}$ (donde $\\alpha = k / \\rho c_e$). Materiales con alta conductividad ($k$) como el **Cobre** ($k={CONSTANTES['Cobre']['k']} W/m·K$) alcanzan el estado estacionario mucho más rápido que los aislantes como el **Vidrio** ($k={CONSTANTES['Vidrio']['k']} W/m·K$).
+    * **Evolución Temporal:** La temperatura evoluciona según la **Ecuación de Difusión de Calor** $\frac{{\partial T}}{{\partial t}} = \alpha \frac{{\partial^2 T}}{{\partial x^2}}$ (donde $\alpha = k / \rho c_e$). Materiales con alta conductividad ($k$) como el **Cobre** ($k={CONSTANTES['Cobre']['k']} W/m·K$) alcanzan el estado estacionario mucho más rápido que los aislantes como el **Vidrio** ($k={CONSTANTES['Vidrio']['k']} W/m·K$).
     """)
     # 
+
 
 # 3.5. Simulación de Conducción de Calor 2D
 def seccion_conduccion_2d():
     st.header("5️⃣ Conducción de Calor en Placa (2D Simplificada)")
     st.markdown("Visualización de la distribución de temperatura en una placa cuadrada en **estado estacionario** usando el método de relajación (Diferencias Finitas).")
     
-    st.warning("La simulación 2D utiliza un método iterativo para encontrar la solución de estado estacionario de la Ecuación de Laplace ($\\nabla^2 T = 0$).")
+    st.warning("La simulación 2D utiliza un método iterativo para encontrar la solución de estado estacionario de la Ecuación de Laplace ($\nabla^2 T = 0$).")
 
     # Parámetros de la malla
     L_placa = st.slider("Tamaño de la Malla (Nodos)", 10, 50, 20, 5)
@@ -469,10 +478,12 @@ def seccion_conduccion_2d():
     )
     st.plotly_chart(fig, use_container_width=True)
 
-    st.info("""
-    **Explicación Física:** En un problema de conducción 2D en estado estacionario (temperaturas que no cambian con el tiempo), la distribución de temperatura está gobernada por la **Ecuación de Laplace** ($\\nabla^2 T = 0$). Esto significa que no hay generación ni acumulación de calor. Las iteraciones numéricas simulan el proceso natural de difusión hasta que cada punto interior se "relaja" a la temperatura promedio de sus vecinos, satisfaciendo la condición de equilibrio.
+    # USANDO RAW STRING (r"""...""")
+    st.info(r"""
+    **Explicación Física:** En un problema de conducción 2D en estado estacionario (temperaturas que no cambian con el tiempo), la distribución de temperatura está gobernada por la **Ecuación de Laplace** ($\nabla^2 T = 0$). Esto significa que no hay generación ni acumulación de calor. Las iteraciones numéricas simulan el proceso natural de difusión hasta que cada punto interior se "relaja" a la temperatura promedio de sus vecinos, satisfaciendo la condición de equilibrio.
     """)
     # 
+
 # --- 4. Función Principal de la Aplicación ---
 
 def main():
