@@ -94,10 +94,6 @@ def seccion_conversor():
     st.info("""
     **Explicación Física:** Las escalas Kelvin y Rankine son **escalas absolutas** (0 K y 0 R representan el cero absoluto, donde no hay movimiento molecular), mientras que Celsius y Fahrenheit se basan en puntos de referencia del agua. El Cero Absoluto es $0 K \\approx -273.15 °C$.
     """)
-    # 
-
-[Image of Temperature scales comparison showing Celsius, Kelvin, Fahrenheit, and Rankine scales]
-
 
 # 3.2. Simulación de Equilibrio Térmico
 def seccion_equilibrio_termico():
@@ -173,7 +169,6 @@ def seccion_equilibrio_termico():
     st.info("""
     **Explicación Física:** El principio se basa en la **Conservación de la Energía**: en un sistema aislado, el calor total perdido por los cuerpos calientes es igual al calor total ganado por los cuerpos fríos ($\Sigma Q = 0$). La temperatura de equilibrio es el promedio ponderado por la capacidad calorífica ($m \\cdot c_e$) de cada cuerpo.
     """)
-    # 
 
 # 3.3. Procesos Térmicos y Cambios de Fase
 def seccion_cambio_fase():
@@ -292,7 +287,6 @@ def seccion_cambio_fase():
     st.info("""
     **Explicación Física:** El calor se usa para dos fines: **aumentar la temperatura** ($Q=mc_e\Delta T$) o **cambiar la fase** ($Q=mL$). Los tramos horizontales en la curva representan los cambios de fase (fusión a $0 °C$ y ebullición a $100 °C$) donde el calor latente ($L$) se absorbe sin cambiar la temperatura.
     """)
-    # 
 
 # 3.4. Simulación de Conducción de Calor 1D (Barra)
 def seccion_conduccion_1d():
@@ -409,8 +403,6 @@ def seccion_conduccion_1d():
     * **Estado Estacionario:** El perfil de temperatura es **lineal** porque la transferencia de calor es constante en cada sección.
     * **Evolución Temporal:** La temperatura evoluciona según la **Ecuación de Difusión de Calor** $\frac{{\partial T}}{{\partial t}} = \alpha \frac{{\partial^2 T}}{{\partial x^2}}$ (donde $\alpha = k / \rho c_e$). Materiales con alta conductividad ($k$) como el **Cobre** ($k={CONSTANTES['Cobre']['k']} W/m·K$) alcanzan el estado estacionario mucho más rápido que los aislantes como el **Vidrio** ($k={CONSTANTES['Vidrio']['k']} W/m·K$).
     """)
-    # 
-
 
 # 3.5. Simulación de Conducción de Calor 2D
 def seccion_conduccion_2d():
@@ -482,7 +474,6 @@ def seccion_conduccion_2d():
     st.info(r"""
     **Explicación Física:** En un problema de conducción 2D en estado estacionario (temperaturas que no cambian con el tiempo), la distribución de temperatura está gobernada por la **Ecuación de Laplace** ($\nabla^2 T = 0$). Esto significa que no hay generación ni acumulación de calor. Las iteraciones numéricas simulan el proceso natural de difusión hasta que cada punto interior se "relaja" a la temperatura promedio de sus vecinos, satisfaciendo la condición de equilibrio.
     """)
-    # 
 
 # --- 4. Función Principal de la Aplicación ---
 
