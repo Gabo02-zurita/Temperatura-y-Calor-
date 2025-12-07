@@ -58,8 +58,7 @@ def modulo_conversion():
 def modulo_equilibrio():
     st.header("2. Simulación de Equilibrio Térmico (2 o 3 Cuerpos)")
     st.markdown("Calcula la temperatura de equilibrio ($T_f$) de la mezcla de cuerpos, asumiendo $Q_{neto}=0$ y **sin cambio de fase**.")
-    # 
-
+    
     num_cuerpos = st.slider("Número de Cuerpos a Mezclar", min_value=2, max_value=3, value=2)
     st.markdown("---")
 
@@ -74,17 +73,16 @@ def modulo_equilibrio():
         opciones_material = [k for k in MATERIAL_PROPERTIES.keys() if "Vapor" not in k and "Hielo" not in k and "Agua" not in k]
         material = st.selectbox(f"Material Cuerpo {i+1}", opciones_material, index=i % len(opciones_material), key=f"mat{i}")
         
-        # CORRECCIÓN DEL ERROR: Forzar c_default a ser flotante (float) para coincidir con min_value, max_value y step.
+        # CORRECCIÓN: Forzar c_default a ser flotante (float) para evitar StreamlitMixedNumericTypesError
         c_default = float(MATERIAL_PROPERTIES.get(material, {}).get("c", 4186.0)) 
         
         c = st.number_input(f"Calor Específico ($c_{i+1}$ en J/kg·K)", 
                             value=c_default, 
                             min_value=1.0, 
                             max_value=10000.0, 
-                            step=1.0, # Debe ser float
+                            step=1.0, 
                             key=f"c{i}")
         
-        # Usar number_input para los demás parámetros con límites y valores float
         m = st.number_input(f"Masa ($m_{i+1}$ en kg)", 
                             value=1.0, 
                             min_value=0.1, 
@@ -101,7 +99,6 @@ def modulo_equilibrio():
 
         datos.append({"m": m, "c": c, "Ti": Ti, "material": material})
         
-        # Cálculo de los sumatorios para Tf
         sum_mc_Ti += m * c * Ti
         sum_mc += m * c
 
@@ -231,10 +228,6 @@ def modulo_cambio_fase():
             
     fig_curva = go.Figure()
     fig_curva.add_trace(go.Scatter(x=Q_plot, y=T_plot, mode='lines', name='Curva de Calentamiento', line=dict(width=3)))
-    # 
-
-[Image of a phase diagram or a heating curve showing plateaus for fusion and vaporization]
-
     
     fig_curva.update_layout(
         title='Curva de Calentamiento (Temperatura vs. Calor Suministrado)',
@@ -253,8 +246,7 @@ def modulo_cambio_fase():
 def modulo_conduccion_1d():
     st.header("4. Simulación de Conducción de Calor 1D (Barra)")
     st.markdown("Modela el flujo de calor ($H$) y el perfil de temperatura en **estado estacionario** (Ley de Fourier).")
-    # 
-
+    
     col1, col2 = st.columns(2)
     with col1:
         st.subheader("Parámetros del Objeto")
@@ -303,8 +295,7 @@ def modulo_conduccion_1d():
 def modulo_conduccion_2d():
     st.header("5. Conducción 2D Simplificada (Placa Cuadrada)")
     st.markdown("Simulación del perfil de temperatura en una placa en **estado estacionario** (solución simplificada de la Ecuación de Laplace).")
-    # 
-
+    
     col1, col2 = st.columns(2)
     with col1:
         N = st.slider("Resolución de la Placa (N x N)", min_value=30, max_value=100, value=50, key="N_2d")
