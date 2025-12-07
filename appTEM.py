@@ -676,7 +676,7 @@ def main():
 
     seleccion = st.sidebar.selectbox("Seleccione la Simulación:", list(opciones.keys()))
     
-    st.title("🌡️ Simulador Interactivo y Avanzado de Termodinámica")
+    st.title("🌡️ Simulador temperatura,calor y transferencia térmica🌡️")
     
     st.markdown("""
     Este simulador cubre los principales temas de **Temperatura, Calor y Transferencia de Calor**. Utiliza constantes de referencia estándar, como las que se encuentran en textos académicos como *Física Universitaria* de Sears Zemansky.
