@@ -3,12 +3,14 @@ import numpy as np
 import plotly.graph_objects as go
 import math
 
-# --- DATOS FÍSICOS (Basados en Física Universitaria) ---
-# Constantes físicas y propiedades de materiales (Valores típicos)
+# --- DATOS FÍSICOS (Basados en Física Universitaria - Cap. 17) ---
+# Constantes físicas y propiedades de materiales (Valores típicos en J/kg·K, J/kg, W/m·K, kg/m³)
 MATERIAL_PROPERTIES = {
+    # Propiedades del Agua
     "Agua (Líquido)": {"c": 4186, "Lf": 334e3, "Lv": 2256e3, "Tf": 0, "Tv": 100, "rho": 1000},
     "Hielo (Sólido)": {"c": 2050, "Lf": 334e3, "Tv": 100, "Tf": 0, "rho": 920},
     "Vapor (Gas)": {"c": 2010, "Lv": 2256e3, "Tv": 100, "Tf": 0, "rho": 0.6},
+    # Propiedades de Sólidos (para Equilibrio y Conducción)
     "Aluminio": {"c": 900, "k": 205.0, "rho": 2700},
     "Cobre": {"c": 390, "k": 385.0, "rho": 8960},
     "Concreto": {"c": 880, "k": 1.1, "rho": 2400},
@@ -30,9 +32,9 @@ st.markdown("---")
 # 1. CONVERSIÓN DE ESCALAS
 def modulo_conversion():
     st.header("1. Conversión Dinámica de Escalas Termométricas")
-    st.markdown("Conversión entre Celsius (**°C**), Kelvin (**K**), Fahrenheit (**°F**) y Rankine (**°R**).")
+    st.markdown("Convierte dinámicamente entre las escalas **Celsius (°C)**, **Kelvin (K)**, **Fahrenheit (°F)** y **Rankine (°R)**.")
 
-    # Controles Interactivos
+    # Controles Interactivos con límites (Rango amplio)
     T_C = st.slider("Temperatura de entrada (°C)", min_value=-300.0, max_value=1000.0, value=20.0, step=0.1)
 
     # Fórmulas de Conversión
@@ -48,15 +50,15 @@ def modulo_conversion():
     col4.metric("Rankine (°R)", f"{T_R:.2f}")
 
     st.markdown("""
-    **Explicación Física:** La escala **Kelvin** es la escala absoluta, donde $0 K$ es el cero absoluto. Las diferencias de temperatura en K y °C son idénticas ($\Delta T_K = \Delta T_C$).
+    **Explicación Física:** La escala **Kelvin** es la escala absoluta, donde $0 K$ es el cero absoluto. La relación entre las escalas se define por puntos fijos como la congelación y ebullición del agua.
     """)
     
 
 # 2. EQUILIBRIO TÉRMICO (CALORIMETRÍA SIMPLE)
 def modulo_equilibrio():
     st.header("2. Simulación de Equilibrio Térmico (2 o 3 Cuerpos)")
-    st.markdown("Calcula la temperatura de equilibrio ($T_f$) de la mezcla, asumiendo $Q_{neto}=0$.")
-    
+    st.markdown("Calcula la temperatura de equilibrio ($T_f$) de la mezcla de cuerpos, asumiendo $Q_{neto}=0$ y **sin cambio de fase**.")
+    # 
 
     num_cuerpos = st.slider("Número de Cuerpos a Mezclar", min_value=2, max_value=3, value=2)
     st.markdown("---")
@@ -65,22 +67,41 @@ def modulo_equilibrio():
     sum_mc = 0
     datos = []
     
-    # Lógica de entrada de datos para N cuerpos
     for i in range(num_cuerpos):
         st.subheader(f"Cuerpo {i+1}")
         
-        # Selección de material
-        opciones_material = [k for k in MATERIAL_PROPERTIES.keys() if "Vapor" not in k and "Hielo" not in k]
+        # Filtramos materiales sin fase para este módulo
+        opciones_material = [k for k in MATERIAL_PROPERTIES.keys() if "Vapor" not in k and "Hielo" not in k and "Agua" not in k]
         material = st.selectbox(f"Material Cuerpo {i+1}", opciones_material, index=i % len(opciones_material), key=f"mat{i}")
         
-        # Parámetros (Controles con límites)
-        c_default = MATERIAL_PROPERTIES.get(material, {}).get("c", 4186.0)
-        c = st.number_input(f"Calor Específico ($c_{i+1}$ en J/kg·K)", value=c_default, min_value=1.0, max_value=10000.0, step=1.0, key=f"c{i}")
-        m = st.slider(f"Masa ($m_{i+1}$ en kg)", value=1.0, min_value=0.1, max_value=5.0, step=0.1, key=f"m{i}")
-        Ti = st.slider(f"Temperatura Inicial ($T_{{i,{i+1}}}$ en °C)", value=(10.0 if i == 0 else 90.0), min_value=-50.0, max_value=120.0, step=1.0, key=f"Ti{i}")
+        # CORRECCIÓN DEL ERROR: Forzar c_default a ser flotante (float) para coincidir con min_value, max_value y step.
+        c_default = float(MATERIAL_PROPERTIES.get(material, {}).get("c", 4186.0)) 
+        
+        c = st.number_input(f"Calor Específico ($c_{i+1}$ en J/kg·K)", 
+                            value=c_default, 
+                            min_value=1.0, 
+                            max_value=10000.0, 
+                            step=1.0, # Debe ser float
+                            key=f"c{i}")
+        
+        # Usar number_input para los demás parámetros con límites y valores float
+        m = st.number_input(f"Masa ($m_{i+1}$ en kg)", 
+                            value=1.0, 
+                            min_value=0.1, 
+                            max_value=5.0, 
+                            step=0.1, 
+                            key=f"m{i}")
+        
+        Ti = st.number_input(f"Temperatura Inicial ($T_{{i,{i+1}}}$ en °C)", 
+                             value=(10.0 if i == 0 else 90.0), 
+                             min_value=-50.0, 
+                             max_value=120.0, 
+                             step=1.0, 
+                             key=f"Ti{i}")
 
         datos.append({"m": m, "c": c, "Ti": Ti, "material": material})
         
+        # Cálculo de los sumatorios para Tf
         sum_mc_Ti += m * c * Ti
         sum_mc += m * c
 
@@ -114,14 +135,14 @@ def modulo_equilibrio():
     
     st.markdown("""
     **Fundamento Teórico (Capítulo 17 - Calorimetría):**
-    El principio es la **conservación de la energía**: el calor total neto transferido es cero. La temperatura final está ponderada por las capacidades caloríficas ($m \cdot c$) de cada cuerpo.
+    El principio es la **conservación de la energía**: la suma del calor ganado y perdido es cero ($Q_{neto}=0$). La energía térmica ($Q$) de cada cuerpo se calcula como $Q = m \cdot c \cdot \Delta T$.
     """)
 
 
 # 3. CAMBIO DE FASE Y PROCESOS POR ETAPAS
 def modulo_cambio_fase():
     st.header("3. Calor Total en Procesos por Etapas (Cambio de Fase del Agua)")
-    st.markdown("Calcula el calor total ($Q$) para el Agua ($H_2O$) desde $T_i$ a $T_f$, considerando fusión y vaporización (Calor Latente).")
+    st.markdown("Calcula el calor total ($Q$) para el Agua ($H_2O$) desde $T_i$ a $T_f$, considerando fusión y vaporización (**Calor Latente**).")
     
     st.subheader("Parámetros del Proceso")
     
@@ -130,12 +151,12 @@ def modulo_cambio_fase():
     T_inicial = col2.slider("Temperatura Inicial ($T_i$ en °C)", value=-10.0, min_value=-50.0, max_value=120.0, step=1.0)
     T_final = col3.slider("Temperatura Final ($T_f$ en °C)", value=110.0, min_value=-50.0, max_value=120.0, step=1.0)
     
-    # Constantes del Agua
+    # Constantes del Agua (obtenidas de MATERIAL_PROPERTIES)
     c_hielo = MATERIAL_PROPERTIES["Hielo (Sólido)"]["c"]
     c_agua = MATERIAL_PROPERTIES["Agua (Líquido)"]["c"]
     c_vapor = MATERIAL_PROPERTIES["Vapor (Gas)"]["c"]
     L_f = MATERIAL_PROPERTIES["Agua (Líquido)"]["Lf"]
-    L_v = MATERIAL_PROPERTIES["Agua (Líquida)"]["Lv"]
+    L_v = MATERIAL_PROPERTIES["Agua (Líquido)"]["Lv"]
     T_f = 0.0         # °C
     T_v = 100.0       # °C
     
@@ -164,7 +185,7 @@ def modulo_cambio_fase():
     
     # 3. Calentamiento como Agua Líquida (de 0°C hasta 100°C)
     if T_actual < T_final and T_actual < T_v:
-        T_inicio_liq = max(T_actual, T_f) # Asegura que inicia en 0 si hubo fusión
+        T_inicio_liq = max(T_actual, T_f)
         T_limite = min(T_final, T_v)
         Q_agua = masa * c_agua * (T_limite - T_inicio_liq)
         Q_total += Q_agua
@@ -191,16 +212,14 @@ def modulo_cambio_fase():
     T_plot = [T_inicial]
     Q_acumulado = 0
     
-    # Se añade cada etapa para la gráfica
+    # Generar puntos para la curva de calentamiento
     for etapa in etapas:
-        Q_acumulado += etapa["Q"] / 1000 # kJ
+        Q_delta = etapa["Q"] / 1000 # kJ
+        Q_acumulado += Q_delta
         T_anterior = T_plot[-1]
         
         if etapa["Tipo"] == "Sensible":
             # Calentamiento (diagonal)
-            T_plot.append(T_anterior)
-            Q_plot.append(Q_acumulado - (etapa["Q"] / 1000) * 0.01) # Pequeño paso inicial
-            
             T_final_etapa = float(etapa["Desc"].split(' a ')[1].split('°C')[0])
             T_plot.append(T_final_etapa)
             Q_plot.append(Q_acumulado)
@@ -211,7 +230,11 @@ def modulo_cambio_fase():
             Q_plot.append(Q_acumulado)
             
     fig_curva = go.Figure()
-    fig_curva.add_trace(go.Scatter(x=Q_plot, y=T_plot, mode='lines+markers', name='Curva de Calentamiento'))
+    fig_curva.add_trace(go.Scatter(x=Q_plot, y=T_plot, mode='lines', name='Curva de Calentamiento', line=dict(width=3)))
+    # 
+
+[Image of a phase diagram or a heating curve showing plateaus for fusion and vaporization]
+
     
     fig_curva.update_layout(
         title='Curva de Calentamiento (Temperatura vs. Calor Suministrado)',
@@ -221,18 +244,22 @@ def modulo_cambio_fase():
     )
     st.plotly_chart(fig_curva, use_container_width=True)
 
+    st.markdown("""
+    **Fundamento Teórico (Capítulo 17 - Cambio de Fase):**
+    El **calor sensible** provoca un cambio de temperatura ($Q = m \cdot c \cdot \Delta T$). El **calor latente** provoca un cambio de fase sin cambio de temperatura ($Q = m \cdot L$).
+    """)
 
 # 4. CONDUCCIÓN DE CALOR 1D
 def modulo_conduccion_1d():
     st.header("4. Simulación de Conducción de Calor 1D (Barra)")
-    st.markdown("Modela el flujo de calor ($H$) y el perfil de temperatura en estado estacionario (Ley de Fourier).")
-    
+    st.markdown("Modela el flujo de calor ($H$) y el perfil de temperatura en **estado estacionario** (Ley de Fourier).")
+    # 
 
     col1, col2 = st.columns(2)
     with col1:
         st.subheader("Parámetros del Objeto")
         material_k = st.selectbox("Material (Determina k)", ["Aluminio", "Cobre", "Concreto", "Vidrio"], key="mat_k")
-        k_default = MATERIAL_PROPERTIES[material_k].get("k", 1.0)
+        k_default = float(MATERIAL_PROPERTIES[material_k].get("k", 1.0)) # Asegurar float
         k = st.slider("Conductividad Térmica ($k$ en $W/m·K$)", value=k_default, min_value=0.01, max_value=400.0, step=0.1)
         A = st.slider("Área de la sección transversal ($A$ en $m^2$)", value=0.01, min_value=0.001, max_value=1.0, step=0.001)
         L = st.slider("Longitud de la barra ($L$ en m)", value=1.0, min_value=0.1, max_value=5.0, step=0.1)
@@ -268,29 +295,29 @@ def modulo_conduccion_1d():
 
     st.markdown("""
     **Fundamento Teórico (Capítulo 17 - Conducción):**
-    En **estado estacionario**, la distribución de temperatura es lineal. El flujo de calor es proporcional a la diferencia de temperatura, al área y a la conductividad térmica ($k$), e inversamente proporcional a la longitud ($L$): $H = k A (T_H - T_C) / L$.
+    El flujo de calor es proporcional al gradiente de temperatura ($\Delta T/L$) y a la conductividad térmica ($k$). En estado estacionario, el gradiente es constante.
     """)
 
 
 # 5. CONDUCCIÓN DE CALOR 2D SIMPLIFICADA
 def modulo_conduccion_2d():
     st.header("5. Conducción 2D Simplificada (Placa Cuadrada)")
-    st.markdown("Simulación del perfil de temperatura en una placa en estado estacionario (Ecuación de Laplace).")
-    
+    st.markdown("Simulación del perfil de temperatura en una placa en **estado estacionario** (solución simplificada de la Ecuación de Laplace).")
+    # 
 
     col1, col2 = st.columns(2)
     with col1:
         N = st.slider("Resolución de la Placa (N x N)", min_value=30, max_value=100, value=50, key="N_2d")
         st.subheader("Condiciones de Borde Superior e Inferior")
-        T_superior = st.number_input("Borde Superior (°C)", value=100.0, min_value=0.0, max_value=200.0, key='Ts')
-        T_inferior = st.number_input("Borde Inferior (°C)", value=20.0, min_value=0.0, max_value=200.0, key='Ti')
+        T_superior = st.number_input("Borde Superior (°C)", value=100.0, min_value=0.0, max_value=200.0, key='Ts', step=1.0)
+        T_inferior = st.number_input("Borde Inferior (°C)", value=20.0, min_value=0.0, max_value=200.0, key='Ti', step=1.0)
     
     with col2:
         st.subheader("Condiciones de Borde Izquierdo y Derecho")
-        T_izquierdo = st.number_input("Borde Izquierdo (°C)", value=50.0, min_value=0.0, max_value=200.0, key='Tiz')
-        T_derecho = st.number_input("Borde Derecho (°C)", value=50.0, min_value=0.0, max_value=200.0, key='Tde')
+        T_izquierdo = st.number_input("Borde Izquierdo (°C)", value=50.0, min_value=0.0, max_value=200.0, key='Tiz', step=1.0)
+        T_derecho = st.number_input("Borde Derecho (°C)", value=50.0, min_value=0.0, max_value=200.0, key='Tde', step=1.0)
 
-    # Inicialización con temperatura promedio para la simulación
+    # Inicialización con temperatura promedio
     T = np.full((N, N), (T_superior + T_inferior + T_izquierdo + T_derecho) / 4)
     
     # Condiciones de contorno
@@ -299,12 +326,14 @@ def modulo_conduccion_2d():
     T[:, 0] = T_izquierdo
     T[:, N-1] = T_derecho
     
-    # Iteración de Jacobi (simplificación para el perfil estacionario)
+    # Iteración de Jacobi (método de diferencias finitas simplificado)
     max_iter = 100
     for _ in range(max_iter): 
         T_new = T.copy()
+        # Aplicación de la Ecuación de Laplace (promedio de vecinos)
         T_new[1:N-1, 1:N-1] = 0.25 * (T[2:N, 1:N-1] + T[0:N-2, 1:N-1] + T[1:N-1, 2:N] + T[1:N-1, 0:N-2])
-        # Reaplicar contorno (importante para la simulación)
+        
+        # Reaplicar contorno (Las temperaturas de los bordes son fijas)
         T_new[0, :] = T_superior
         T_new[N-1, :] = T_inferior
         T_new[:, 0] = T_izquierdo
@@ -314,7 +343,7 @@ def modulo_conduccion_2d():
     # Visualización (Plotly Heatmap)
     fig = go.Figure(data=go.Heatmap(
         z=T,
-        colorscale='Jet', # Jet ofrece un buen rango visual para temperatura
+        colorscale='Jet',
         zmin=min(T_inferior, T_superior, T_izquierdo, T_derecho),
         zmax=max(T_inferior, T_superior, T_izquierdo, T_derecho)
     ))
@@ -330,7 +359,7 @@ def modulo_conduccion_2d():
     
     st.markdown("""
     **Fundamento Teórico (Caso Extendido):**
-    En estado estacionario (tiempo largo), la distribución de temperatura se rige por la **Ecuación de Laplace** ($\nabla^2 T = 0$). El calor fluye perpendicularmente a las líneas isotérmicas (líneas de igual temperatura) mostradas en el mapa de calor.
+    La distribución se aproxima a la solución de la **Ecuación de Laplace** ($\nabla^2 T = 0$), la cual describe la temperatura en un medio sin fuentes de calor en estado estacionario.
     """)
 
 
