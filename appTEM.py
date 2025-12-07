@@ -7,7 +7,7 @@ from scipy.constants import convert_temperature
 
 # --- 1. Configuración y Constantes ---
 
-st.set_page_config(layout="wide", page_title="Simulador Avanzado de Termodinámica 🌡️")
+st.set_page_config(layout="wide", page_title="Simulador temperatura,calor y transferencia térmica🌡️")
 
 # Constantes de Termodinámica (Valores de referencia)
 # c_e: J/kg·K | L: J/kg | k: W/m·K
