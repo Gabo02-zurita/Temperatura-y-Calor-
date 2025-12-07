@@ -92,7 +92,7 @@ def seccion_conversor():
                 st.metric(f"{escala} (°{escala})", f"{conversiones[escala]:.2f}")
 
     st.info("""
-    **Explicación Física:** Las escalas Kelvin y Rankine son **escalas absolutas** (0 K y 0 R representan el cero absoluto, donde no hay movimiento molecular), mientras que Celsius y Fahrenheit se basan en puntos de referencia del agua. El Cero Absoluto es $0 K \approx -273.15 °C$.
+    **Explicación Física:** Las escalas Kelvin y Rankine son **escalas absolutas** (0 K y 0 R representan el cero absoluto, donde no hay movimiento molecular), mientras que Celsius y Fahrenheit se basan en puntos de referencia del agua. El Cero Absoluto es $0 K \\approx -273.15 °C$.
     """)
     # 
 
@@ -171,7 +171,7 @@ def seccion_equilibrio_termico():
     st.plotly_chart(fig, use_container_width=True)
 
     st.info("""
-    **Explicación Física:** El principio se basa en la **Conservación de la Energía**: en un sistema aislado, el calor total perdido por los cuerpos calientes es igual al calor total ganado por los cuerpos fríos ($\Sigma Q = 0$). La temperatura de equilibrio es el promedio ponderado por la capacidad calorífica ($m \cdot c_e$) de cada cuerpo.
+    **Explicación Física:** El principio se basa en la **Conservación de la Energía**: en un sistema aislado, el calor total perdido por los cuerpos calientes es igual al calor total ganado por los cuerpos fríos ($\Sigma Q = 0$). La temperatura de equilibrio es el promedio ponderado por la capacidad calorífica ($m \\cdot c_e$) de cada cuerpo.
     """)
     # 
 
@@ -478,7 +478,7 @@ def seccion_conduccion_2d():
     )
     st.plotly_chart(fig, use_container_width=True)
 
-    # USANDO RAW STRING (r"""...""")
+    # USANDO RAW STRING (r"""...""") para evitar el SyntaxError con LaTeX
     st.info(r"""
     **Explicación Física:** En un problema de conducción 2D en estado estacionario (temperaturas que no cambian con el tiempo), la distribución de temperatura está gobernada por la **Ecuación de Laplace** ($\nabla^2 T = 0$). Esto significa que no hay generación ni acumulación de calor. Las iteraciones numéricas simulan el proceso natural de difusión hasta que cada punto interior se "relaja" a la temperatura promedio de sus vecinos, satisfaciendo la condición de equilibrio.
     """)
